@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>네이버 상품 검색</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <h1>파이썬 네이버 상품 검색</h1>
+    <input id="query" type="text" required>
+    <button id="search-btn">검색</button>
+    <ul id="result"></ul>
+
+    <script>
+    $(document).ready(function(){
+        $('#search-btn').click(function(){
+            var query = $('#query').val();
+            $.get('/api/search', {query: query}, function(data){
+                $('#result').empty();
+                data.forEach(function(item){
+                    var li = $('<li></li>')
+                    li.append('<img src="' + item.image + '" width="200" height="200">');
+                    li.append('<a href="' + item.link + '">' + item.title + '</a>');
+                    li.append('<p>가격: ' + (item.lprice || '정보 없음') + '</p>');
+                    li.append('<p>브랜드: ' + (item.brand || '정보 없음') + '</p>');
+                    li.append('<p>카테고리: ' + (item.category1 || '') + ' > ' + (item.category2 || '') + ' > ' + (item.category3 || '') + '</p>');
+                    $('#result').append(li);
+                });
+            });
+        });
+    });
+    </script>
+</body>
+</html>
