@@ -120,4 +120,4 @@ def search_image_route():
 
 if __name__ == '__main__':
     # 외부에서 접속 가능한 모든 IP 주소, 포트 5000으로 설정
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)
