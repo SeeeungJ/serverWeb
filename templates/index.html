@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="static/css/index_css.css" />
+    <title>네이버 상품 검색</title>
+    <!-- jQuery 포함 -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+<body>
+    <h1>네이버 상품 검색</h1>
+
+    <div style="display: flex; justify-content: space-between;">
+
+        <!-- 텍스트로 상품 정보 검색 -->
+        <div style="width: 48%;">
+            <h2>텍스트로 상품 정보 검색</h2>
+            <form id="textSearchForm">
+                <label for="textQuery">검색어:</label>
+                <input type="text" id="textQuery" name="query" required onkeydown="handleKeyDown(event)">
+                <button type="button" onclick="searchText()">검색</button>
+            </form>
+            <div id="textResult"></div>
+        </div>
+
+        <!-- 이미지로 상품 정보 검색 -->
+        <div style="width: 48%;">
+            <h2>이미지로 상품 정보 검색</h2>
+            <form id="imageSearchForm">
+                <label for="image">이미지 : </label>
+                <input type="file" id="image" accept="image/*" onchange="displaySelectedImage()" required>
+                <button type="button" onclick="detectAndSearch()">검색하기</button>
+                <h2>선택한 이미지:</h2>
+            </form>
+            <div id="image-container"></div>
+            <div id="search-results">
+                <h2>검색 결과:</h2>
+                <ul id="result"></ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // 엔터 키의 기본 동작 방지 (폼 제출 방지)
+                searchText();
+            }
+        }
+
+        function searchText() {
+            var query = document.getElementById('textQuery').value;
+            var formData = new FormData(document.getElementById('textSearchForm'));
+            search('search_text', formData, 'textResult');
+        }
+
+        function displaySelectedImage() {
+            var imageContainer = document.getElementById('image-container');
+            imageContainer.innerHTML = '';
+
+            var img = document.createElement('img');
+            img.src = URL.createObjectURL(document.getElementById('image').files[0]);
+            img.width = 300;
+            imageContainer.appendChild(img);
+        }
+
+        function detectAndSearch() {
+            var formData = new FormData();
+            formData.append('image', document.getElementById('image').files[0]);
+            search('search_image', formData, 'result');
+        }
+
+        function search(route, data, resultId) {
+            fetch('/' + route, {
+                method: 'POST',
+                body: data,
+            })
+            .then(response => response.json())
+            .then(data => {
+                var resultElement = document.getElementById(resultId);
+                resultElement.innerHTML = '';  // 기존 내용 초기화
+    
+                if ('textResults' in data) {
+                    data.textResults.forEach(item => {
+                        var div = document.createElement('li');
+                        div.innerHTML = '<img src="' + item.image + '" width="200" height="200">' + '<br>' + 
+                                        '<a href="' + item.link + '">' + item.title + '</a>' +
+                                        '<p>가격: ' + (item.lprice || '정보 없음') + '</p>' +
+                                        '<p>브랜드: ' + (item.brand || '정보 없음') + '</p>' +
+                                        '<p>카테고리: ' + (item.category1 || '') + ' > ' + (item.category2 || '') + ' > ' + (item.category3 || '') + '</p>';
+                        resultElement.appendChild(div);
+                    });
+                }
+    
+                if ('imageResults' in data) {
+                    var imageContainer = document.getElementById('image-container');
+                    imageContainer.innerHTML = '';
+    
+                    if ('objects' in data.imageResults) {
+                        var ul = document.createElement('ul');
+                        data.imageResults.objects.forEach(function (obj) {
+                            var li = document.createElement('li');
+                            li.textContent = '인식된 객체 카테고리 : ' + obj.label + ' 유사도 : ' + obj.confidence;
+                            ul.appendChild(li);
+                        });
+                        imageContainer.appendChild(ul);
+                    }
+    
+                    var img = document.createElement('img');
+                    img.src = URL.createObjectURL(document.getElementById('image').files[0]);
+                    img.width = 300;
+                    imageContainer.appendChild(img);
+    
+                    var resultElement = document.getElementById(resultId);
+                    resultElement.innerHTML = '';
+                    data.imageResults.naver_result.forEach(item => {
+                        var imageList = document.createElement('li');
+                        imageList.innerHTML = '<img src="' + item.image + '" width="200" height="200">' + '<br>' + 
+                                    '<a href="' + item.link + '">' + item.title + '</a>' +
+                                    '<p>가격: ' + (item.lprice || '정보 없음') + '</p>' +
+                                    '<p>브랜드: ' + (item.brand || '정보 없음') + '</p>' +
+                                    '<p>카테고리: ' + (item.category1 || '') + ' > ' + (item.category2 || '') + ' > ' + (item.category3 || '') + '</p>';
+                        resultElement.appendChild(imageList);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('에러:', error);
+            });
+        }
+    </script>
+</body>
+</html>
